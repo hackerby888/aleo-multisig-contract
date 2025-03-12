@@ -28,19 +28,20 @@ program aleo_multisig.aleo {
     mapping balances: address => u64;
     mapping transfers: field => Transfer;
 
-    async transition create_wallet(owners: [address; 16],  threshold: u8) -> Future {
-        return finalize_create_wallet(owners, threshold);
+    async transition create_wallet(wallet_address: address, owners: [address; 16],  threshold: u8) -> Future {
+        assert_eq(threshold <= MAX_OWNERS && threshold >= 1u8, true);
+        return finalize_create_wallet(wallet_address, owners, threshold);
     }
 
-    async function finalize_create_wallet(owners: [address; 16],  threshold: u8) {
-        let random_wallet_address: address = ChaCha::rand_address();
+    async function finalize_create_wallet(wallet_address: address, owners: [address; 16],  threshold: u8) {
+        assert_eq(Mapping::contains(wallets, wallet_address), false);
         let wallet: Wallet = Wallet {
-            wallet_address: random_wallet_address,
+            wallet_address: wallet_address,
             owners: owners,
             threshold: threshold,
         };
-        Mapping::set(wallets, random_wallet_address, wallet);
-        Mapping::set(balances, random_wallet_address, 0u64);
+        Mapping::set(wallets, wallet_address, wallet);
+        Mapping::set(balances, wallet_address, 0u64);
     }
 
     async transition deposit(wallet_address: address, amount: u64) -> Future {
