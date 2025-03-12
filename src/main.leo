@@ -7,7 +7,7 @@ program aleo_multisig.aleo {
 
     struct Wallet {
         wallet_address: address,
-        owners: [address; 16],
+        owners: [address; 14],
         threshold: u8,
     }
 
@@ -28,12 +28,12 @@ program aleo_multisig.aleo {
     mapping balances: address => u64;
     mapping transfers: field => Transfer;
 
-    async transition create_wallet(wallet_address: address, owners: [address; 16],  threshold: u8) -> Future {
+    async transition create_wallet(wallet_address: address, owners: [address; 14],  threshold: u8) -> Future {
         assert_eq(threshold <= MAX_OWNERS && threshold >= 1u8, true);
         return finalize_create_wallet(wallet_address, owners, threshold);
     }
 
-    async function finalize_create_wallet(wallet_address: address, owners: [address; 16],  threshold: u8) {
+    async function finalize_create_wallet(wallet_address: address, owners: [address; 14],  threshold: u8) {
         assert_eq(Mapping::contains(wallets, wallet_address), false);
         let wallet: Wallet = Wallet {
             wallet_address: wallet_address,
@@ -155,11 +155,15 @@ program aleo_multisig.aleo {
         //check if signer is one of the owners
         assert_eq(is_contains(wallet.owners, signer), true);
 
+        //check if the wallet has enough balance
+        let current_balance: u64 = Mapping::get(balances, wallet.wallet_address);
+        assert_eq(current_balance >= amount, true);
+
         Mapping::set(transfers, transfer_id, Transfer {
             wallet_address: wallet.wallet_address,
             to: to,
             amount: amount,
-            confirmations: 1u8,
+            confirmations: 0u8,
         });
     }
 
@@ -211,7 +215,7 @@ program aleo_multisig.aleo {
     }
 
     //////////////////// Utility functions ////////////////////
-    inline is_contains(array: [address; 16], element: address) -> bool {
+    inline is_contains(array: [address; 14], element: address) -> bool {
         for i:u8 in 0u8..MAX_OWNERS {
             if array[i] == element {
                 return true;
